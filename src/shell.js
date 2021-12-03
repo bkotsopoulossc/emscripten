@@ -138,14 +138,9 @@ else if (ENVIRONMENT_IS_NODE) {
 
 // `/` should be present at the end if `scriptDirectory` is not empty
 var scriptDirectory = '';
-function locateFile(path) {
-#if expectToReceiveOnModule('locateFile')
-  if (Module['locateFile']) {
-    return Module['locateFile'](path, scriptDirectory);
-  }
-#endif
-  return scriptDirectory + path;
-}
+// Set the default locateFile hook, but this can be overriden by the user at runtime, as an incoming
+// Module property.
+Module['locateFile'] = function (path) { return scriptDirectory + path}
 
 // Hooks that are implemented differently in different runtime environments.
 var read_,
@@ -250,7 +245,7 @@ if (ENVIRONMENT_IS_NODE) {
   // If target shell does not support Wasm, load the JS version of the code.
   if (typeof WebAssembly === 'undefined') {
     requireNodeFS();
-    eval(fs.readFileSync(locateFile('{{{ TARGET_BASENAME }}}.wasm.js'))+'');
+    eval(fs.readFileSync(Module['locateFile']('{{{ TARGET_BASENAME }}}.wasm.js'))+'');
   }
 #endif
 
@@ -320,7 +315,7 @@ if (ENVIRONMENT_IS_SHELL) {
 #if WASM == 2
   // If target shell does not support Wasm, load the JS version of the code.
   if (typeof WebAssembly === 'undefined') {
-    eval(read(locateFile('{{{ TARGET_BASENAME }}}.wasm.js'))+'');
+    eval(read(Module['locateFile']('{{{ TARGET_BASENAME }}}.wasm.js'))+'');
   }
 #endif
 
